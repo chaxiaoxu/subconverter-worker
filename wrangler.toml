@@ -1,3 +1,11 @@
 name = "subconverter-worker"
+
 main = "worker.js"
+
 compatibility_date = "2026-05-29"
+
+workers_dev = true
+
+kv_namespaces = [
+  { binding = "SUB_DB", id = "cc03264348c04101a0e92d32d01541be" }
+]
