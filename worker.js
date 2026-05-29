@@ -1,87 +1,127 @@
-/**
- * Subconverter Worker 完整示例
- */
-
 export default {
-  async fetch(request, env) {
+  async fetch(request) {
     const url = new URL(request.url)
 
-    // -----------------------
-    // 后台管理 /admin
-    // -----------------------
-    if (url.pathname === "/admin") {
-      if (request.method === "POST") {
-        try {
-          const form = await request.formData()
-          const sub = form.get("sub")?.trim()
-          if (!sub) return new Response("请输入订阅地址", { status: 400 })
+    // =========================
+    // 你的真实订阅
+    // =========================
+    const SUB_URL =
+      "https://pages-879.pages.dev/386bab19-4a72-4fe2-b5c6-eb98701333a6/sub"
 
-          // 保存到 KV
-          await env.SUB_DB.put("sub", sub)
-          return new Response("订阅保存成功")
-        } catch (e) {
-          return new Response("保存失败：" + e.toString(), { status: 500 })
-        }
-      }
-
-      // GET 返回简单后台页面
-      const saved = await env.SUB_DB.get("sub") || ""
+    // =========================
+    // 主页伪装
+    // =========================
+    if (url.pathname === "/") {
       return new Response(`
-        <html>
-          <body>
-            <h2>订阅管理面板</h2>
-            <form method="POST">
-              订阅地址:<br>
-              <input type="text" name="sub" value="${saved}" style="width:80%">
-              <input type="submit" value="保存">
-            </form>
-            <p>订阅获取地址: /sub</p>
-          </body>
-        </html>
-      `, { headers: { "content-type": "text/html;charset=utf-8" } })
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Welcome</title>
+<style>
+body{
+background:#0f172a;
+color:#fff;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+font-family:sans-serif;
+flex-direction:column
+}
+h1{font-size:48px}
+p{opacity:.7}
+</style>
+</head>
+<body>
+<h1>Cloudflare Worker</h1>
+<p>Service Running...</p>
+</body>
+</html>
+`, {
+        headers: {
+          "content-type": "text/html;charset=UTF-8",
+        },
+      })
     }
 
-    // -----------------------
-    // 订阅输出 /sub
-    // -----------------------
+    // =========================
+    // 通用订阅
+    // =========================
     if (url.pathname === "/sub") {
-      try {
-        const sub = await env.SUB_DB.get("sub")
-        if (!sub) return new Response("未设置订阅地址", { status: 400 })
-
-        // 防止填写自己的 /sub 导致无限递归
-        if (sub.includes(url.hostname)) {
-          return new Response("订阅地址不能指向自己", { status: 400 })
-        }
-
-        // 获取订阅内容
-        const resp = await fetch(sub)
-        if (!resp.ok) return new Response("订阅请求失败 HTTP " + resp.status, { status: 500 })
-
-        const text = await resp.text()
-
-        return new Response(text, {
-          headers: {
-            "content-type": "text/plain;charset=utf-8",
-            "Access-Control-Allow-Origin": "*"
-          }
-        })
-      } catch (e) {
-        return new Response("订阅获取失败：\n\n" + e.toString(), { status: 500 })
-      }
+      return await proxySub(SUB_URL)
     }
 
-    // -----------------------
-    // 根目录首页
-    // -----------------------
-    return new Response(`
-      <html>
-        <body>
-          <h2>Sub Worker 正常运行</h2>
-          <p>后台: <a href="/admin">/admin</a></p>
-          <p>订阅: <a href="/sub">/sub</a></p>
-        </body>
-      </html>
-    `, { headers: { "content-type": "text/html;charset=utf-8" } })
-  }
+    // =========================
+    // Clash
+    // =========================
+    if (url.pathname === "/clash") {
+      return await convertSub(SUB_URL, "clash")
+    }
+
+    // =========================
+    // Sing-box
+    // =========================
+    if (url.pathname === "/singbox") {
+      return await convertSub(SUB_URL, "singbox")
+    }
+
+    // =========================
+    // V2rayN
+    // =========================
+    if (url.pathname === "/v2rayn") {
+      return await proxySub(SUB_URL)
+    }
+
+    return new Response("404 Not Found", {
+      status: 404,
+    })
+  },
+}
+
+// =========================
+// 原始订阅代理
+// =========================
+async function proxySub(subUrl) {
+  const response = await fetch(subUrl, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0",
+    },
+  })
+
+  const text = await response.text()
+
+  return new Response(text, {
+    headers: {
+      "content-type": "text/plain;charset=utf-8",
+    },
+  })
+}
+
+// =========================
+// 订阅转换
+// 使用 subconverter
+// =========================
+async function convertSub(subUrl, target) {
+  const converter =
+    "https://sub.xeton.dev/sub"
+
+  const url =
+    `${converter}?target=${target}&url=${encodeURIComponent(subUrl)}&insert=false&emoji=true&list=true`
+
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0",
+    },
+  })
+
+  const text = await response.text()
+
+  return new Response(text, {
+    headers: {
+      "content-type": "text/plain;charset=utf-8",
+    },
+  })
 }
