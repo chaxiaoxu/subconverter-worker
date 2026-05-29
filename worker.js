@@ -4,10 +4,7 @@ export default {
 
     const url = new URL(request.url)
 
-    // =========================
-    // 后台管理页面
-    // =========================
-
+    // 后台
     if (url.pathname === "/admin") {
 
       const current = await env.SUB_DB.get("sub")
@@ -15,26 +12,22 @@ export default {
       return new Response(`
 <!DOCTYPE html>
 <html>
-
 <head>
-
 <meta charset="utf-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <title>Sub Worker</title>
 
 <style>
 
 body{
   font-family:sans-serif;
-  max-width:800px;
-  margin:auto;
-  padding:20px;
   background:#f5f5f5;
+  padding:20px;
 }
 
 .card{
+  max-width:800px;
+  margin:auto;
   background:white;
   padding:20px;
   border-radius:12px;
@@ -61,12 +54,8 @@ button{
 pre{
   background:#eee;
   padding:12px;
-  overflow:auto;
   border-radius:8px;
-}
-
-a{
-  color:#111;
+  overflow:auto;
 }
 
 </style>
@@ -89,7 +78,7 @@ a{
 />
 
 <button type="submit">
-保存订阅
+保存
 </button>
 
 </form>
@@ -100,16 +89,134 @@ a{
 
 <pre>${url.origin}/sub</pre>
 
-<h3>后台地址</h3>
-
-<pre>${url.origin}/admin</pre>
-
 </div>
 
 </body>
 </html>
       `, {
         headers:{
+          "content-type":"text/html;charset=utf-8"
+        }
+      })
+    }
+
+    // 保存
+    if (url.pathname === "/save") {
+
+      try {
+
+        const form = await request.formData()
+
+        const sub = form.get("url") || ""
+
+        await env.SUB_DB.put("sub", sub)
+
+        return Response.redirect(
+          url.origin + "/admin",
+          302
+        )
+
+      } catch (e) {
+
+        return new Response(
+          "保存失败:\n\n" + e.toString(),
+          {
+            status:500
+          }
+        )
+
+      }
+    }
+
+    // 获取订阅
+    if (url.pathname === "/sub") {
+
+      try {
+
+        const sub = await env.SUB_DB.get("sub")
+
+        if (!sub) {
+
+          return new Response(
+            "未设置订阅地址",
+            {
+              status:400
+            }
+          )
+
+        }
+
+        const resp = await fetch(sub, {
+          headers:{
+            "User-Agent":"Mozilla/5.0"
+          }
+        })
+
+        if (!resp.ok) {
+
+          return new Response(
+            "订阅请求失败 HTTP " + resp.status,
+            {
+              status:500
+            }
+          )
+
+        }
+
+        const text = await resp.text()
+
+        return new Response(text, {
+          status:200,
+          headers:{
+            "content-type":"text/plain;charset=utf-8",
+            "Access-Control-Allow-Origin":"*"
+          }
+        })
+
+      } catch (e) {
+
+        return new Response(
+          "订阅获取失败:\n\n" + e.toString(),
+          {
+            status:500
+          }
+        )
+
+      }
+    }
+
+    // 首页
+    return new Response(`
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sub Worker</title>
+</head>
+
+<body>
+
+<h2>Sub Worker 正常运行</h2>
+
+<p>后台：</p>
+
+<pre>/admin</pre>
+
+<p>订阅：</p>
+
+<pre>/sub</pre>
+
+</body>
+</html>
+    `, {
+      headers:{
+        "content-type":"text/html;charset=utf-8"
+      }
+    })
+
+  }
+
+}        headers:{
           "content-type":"text/html;charset=utf-8"
         }
       })
