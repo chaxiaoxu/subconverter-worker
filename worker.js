@@ -1,22 +1,28 @@
 export default {
   async fetch(request) {
-    const url = new URL(request.url)
 
-    // 真实订阅
-    const SUB_URL =
-      "https://pages-879.pages.dev/386bab19-4a72-4fe2-b5c6-eb98701333a6/sub"
+    const url = new URL(request.url)
 
     // 首页
     if (url.pathname === "/") {
+
       return new Response(`
+
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0">
+
 <title>PSUB</title>
 
 <style>
+
 *{
 margin:0;
 padding:0;
@@ -24,146 +30,365 @@ box-sizing:border-box
 }
 
 body{
+
 background:#0f172a;
+
 font-family:sans-serif;
-color:white;
+
 height:100vh;
+
 display:flex;
+
 justify-content:center;
+
 align-items:center;
-padding:20px
+
+padding:20px;
+
+color:white
+
 }
 
 .card{
+
 width:100%;
-max-width:500px;
+
+max-width:520px;
+
 background:#111827;
-border-radius:20px;
-padding:40px;
-box-shadow:0 0 40px rgba(0,0,0,.4);
-text-align:center
+
+padding:35px;
+
+border-radius:24px;
+
+box-shadow:0 0 45px rgba(0,0,0,.45)
+
 }
 
 .logo{
-font-size:42px;
+
+font-size:44px;
+
 font-weight:bold;
-margin-bottom:10px;
-background:linear-gradient(90deg,#60a5fa,#818cf8);
+
+text-align:center;
+
+margin-bottom:12px;
+
+background:linear-gradient(
+90deg,
+#60a5fa,
+#818cf8
+);
+
 -webkit-background-clip:text;
+
 -webkit-text-fill-color:transparent
+
 }
 
 .desc{
+
+text-align:center;
+
 color:#94a3b8;
-margin-bottom:35px
+
+margin-bottom:25px
+
+}
+
+.input{
+
+width:100%;
+
+padding:15px;
+
+border:none;
+
+border-radius:12px;
+
+background:#1e293b;
+
+color:white;
+
+font-size:15px;
+
+margin-bottom:18px
+
+}
+
+.select{
+
+width:100%;
+
+padding:15px;
+
+border:none;
+
+border-radius:12px;
+
+background:#1e293b;
+
+color:white;
+
+font-size:15px;
+
+margin-bottom:18px
+
 }
 
 .btn{
-display:block;
+
 width:100%;
+
 padding:15px;
-margin-bottom:15px;
+
+border:none;
+
 border-radius:12px;
-text-decoration:none;
-font-size:17px;
+
+background:#2563eb;
+
+color:white;
+
+font-size:16px;
+
 font-weight:bold;
-transition:.25s;
-background:#1e293b;
-color:white
+
+cursor:pointer;
+
+transition:.25s
+
 }
 
 .btn:hover{
-transform:translateY(-2px);
-background:#2563eb
+
+background:#3b82f6
+
+}
+
+.result{
+
+margin-top:20px;
+
+background:#1e293b;
+
+padding:15px;
+
+border-radius:12px;
+
+word-break:break-all;
+
+font-size:14px;
+
+color:#93c5fd
+
+}
+
+.copy{
+
+margin-top:14px;
+
+width:100%;
+
+padding:13px;
+
+border:none;
+
+border-radius:12px;
+
+background:#0ea5e9;
+
+color:white;
+
+font-weight:bold;
+
+cursor:pointer
+
 }
 
 .footer{
-margin-top:20px;
+
+margin-top:18px;
+
+text-align:center;
+
 font-size:13px;
+
 color:#64748b
+
 }
+
 </style>
+
 </head>
 
 <body>
 
 <div class="card">
 
-<div class="logo">PSUB</div>
+<div class="logo">
+PSUB
+</div>
 
 <div class="desc">
-Cloudflare Subscription Service
+Cloudflare Subscription Convert
 </div>
 
-<a class="btn" href="/sub">
-原始订阅
-</a>
+<input
 
-<a class="btn" href="/clash">
-Clash 订阅
-</a>
+id="sub"
 
-<a class="btn" href="/singbox">
-Sing-box 订阅
-</a>
+class="input"
 
-<a class="btn" href="/v2rayn">
-V2rayN 订阅
-</a>
+placeholder="输入订阅链接">
+
+<select
+
+id="target"
+
+class="select">
+
+<option value="clash">
+Clash
+</option>
+
+<option value="singbox">
+Sing-box
+</option>
+
+<option value="v2rayn">
+V2rayN
+</option>
+
+</select>
+
+<button
+
+class="btn"
+
+onclick="gen()">
+
+生成订阅
+
+</button>
+
+<div
+
+id="result"
+
+class="result">
+
+生成结果会显示在这里
+
+</div>
+
+<button
+
+class="copy"
+
+onclick="copyResult()">
+
+复制链接
+
+</button>
 
 <div class="footer">
+
 Service Running
+
 </div>
 
 </div>
+
+<script>
+
+function gen(){
+
+const sub =
+document.getElementById("sub").value
+
+const target =
+document.getElementById("target").value
+
+if(!sub){
+
+alert("请输入订阅链接")
+
+return
+
+}
+
+const link =
+location.origin +
+"/convert?target=" +
+target +
+"&url=" +
+encodeURIComponent(sub)
+
+document.getElementById("result")
+.innerText = link
+
+}
+
+function copyResult(){
+
+const text =
+document.getElementById("result")
+.innerText
+
+navigator.clipboard.writeText(text)
+
+alert("已复制")
+
+}
+
+</script>
 
 </body>
+
 </html>
+
 `,
 {
 headers:{
 "content-type":"text/html;charset=UTF-8"
 }
 })
+
     }
 
-    // 原始订阅
-    if (url.pathname === "/sub") {
-      return await proxySub(SUB_URL)
+    // 转换接口
+    if (url.pathname === "/convert") {
+
+      const sub =
+        url.searchParams.get("url")
+
+      const target =
+        url.searchParams.get("target") || "clash"
+
+      if (!sub) {
+
+        return new Response(
+          "Missing subscription url",
+          { status:400 }
+        )
+
+      }
+
+      return await convertSub(
+        sub,
+        target
+      )
+
     }
 
-    // Clash
-    if (url.pathname === "/clash") {
-      return await convertSub(SUB_URL, "clash")
-    }
+    return new Response(
+      "404 Not Found",
+      { status:404 }
+    )
 
-    // Sing-box
-    if (url.pathname === "/singbox") {
-      return await convertSub(SUB_URL, "singbox")
-    }
-
-    // V2rayN
-    if (url.pathname === "/v2rayn") {
-      return await proxySub(SUB_URL)
-    }
-
-    return new Response("404 Not Found", {
-      status: 404,
-    })
   },
-}
-
-// 原始订阅代理
-async function proxySub(subUrl) {
-  const response = await fetch(subUrl)
-
-  const text = await response.text()
-
-  return new Response(text, {
-    headers: {
-      "content-type": "text/plain;charset=utf-8",
-    },
-  })
 }
 
 // 订阅转换
@@ -173,15 +398,18 @@ async function convertSub(subUrl, target) {
     "https://api.v1.mk/sub"
 
   const url =
-    `${converter}?target=${target}&url=${encodeURIComponent(subUrl)}&insert=false&emoji=true&list=true`
+`${converter}?target=${target}&url=${encodeURIComponent(subUrl)}&insert=false&emoji=true&list=true`
 
-  const response = await fetch(url)
+  const response =
+    await fetch(url)
 
-  const text = await response.text()
+  const text =
+    await response.text()
 
-  return new Response(text, {
-    headers: {
-      "content-type": "text/plain;charset=utf-8",
-    },
+  return new Response(text,{
+    headers:{
+      "content-type":"text/plain;charset=utf-8"
+    }
   })
+
 }
