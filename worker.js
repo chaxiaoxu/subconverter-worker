@@ -2,161 +2,186 @@ export default {
   async fetch(request) {
     const url = new URL(request.url)
 
-    // =========================
-    // 你的真实订阅
-    // =========================
+    // 真实订阅
     const SUB_URL =
       "https://pages-879.pages.dev/386bab19-4a72-4fe2-b5c6-eb98701333a6/sub"
 
-    // =========================
-    // 首页 Psub 风格
-    // =========================
+    // 首页
     if (url.pathname === "/") {
       return new Response(`
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PSUB Worker</title>
+<title>PSUB</title>
+
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-  font-family: 'Inter', sans-serif;
-  background: linear-gradient(135deg,#0f172a,#1e293b);
-  color:#fff;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  min-height:100vh;
-  padding:20px;
+*{
+margin:0;
+padding:0;
+box-sizing:border-box
 }
-h1 {
-  font-size:3rem;
-  margin-bottom:10px;
-  color:#3b82f6;
+
+body{
+background:#0f172a;
+font-family:sans-serif;
+color:white;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+padding:20px
 }
-p {
-  color:#94a3b8;
-  margin-bottom:30px;
-  font-size:1.1rem;
+
+.card{
+width:100%;
+max-width:500px;
+background:#111827;
+border-radius:20px;
+padding:40px;
+box-shadow:0 0 40px rgba(0,0,0,.4);
+text-align:center
 }
-.container {
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:15px;
+
+.logo{
+font-size:42px;
+font-weight:bold;
+margin-bottom:10px;
+background:linear-gradient(90deg,#60a5fa,#818cf8);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent
 }
-.button {
-  padding:12px 25px;
-  background:#3b82f6;
-  color:#fff;
-  border:none;
-  border-radius:8px;
-  font-size:1rem;
-  text-decoration:none;
-  cursor:pointer;
-  transition:0.3s;
+
+.desc{
+color:#94a3b8;
+margin-bottom:35px
 }
-.button:hover {
-  background:#2563eb;
+
+.btn{
+display:block;
+width:100%;
+padding:15px;
+margin-bottom:15px;
+border-radius:12px;
+text-decoration:none;
+font-size:17px;
+font-weight:bold;
+transition:.25s;
+background:#1e293b;
+color:white
 }
-.copy-btn {
-  background:#10b981;
+
+.btn:hover{
+transform:translateY(-2px);
+background:#2563eb
 }
-.copy-btn:hover {
-  background:#059669;
-}
-input {
-  width:300px;
-  padding:10px;
-  border-radius:6px;
-  border:none;
-  margin-top:20px;
-  font-size:0.9rem;
+
+.footer{
+margin-top:20px;
+font-size:13px;
+color:#64748b
 }
 </style>
 </head>
+
 <body>
-<h1>PSUB Worker</h1>
-<p>服务正在运行，选择你的订阅格式：</p>
-<div class="container">
-  <a class="button" href="/sub" target="_blank">原始订阅</a>
-  <a class="button" href="/clash" target="_blank">Clash</a>
-  <a class="button" href="/singbox" target="_blank">Sing-box</a>
-  <a class="button" href="/v2rayn" target="_blank">V2rayN</a>
-  <button class="button copy-btn" onclick="copySub()">复制订阅链接</button>
+
+<div class="card">
+
+<div class="logo">PSUB</div>
+
+<div class="desc">
+Cloudflare Subscription Service
 </div>
-<input type="text" id="subInput" value="${SUB_URL}" readonly>
-<script>
-function copySub() {
-  const input = document.getElementById('subInput');
-  input.select();
-  input.setSelectionRange(0, 99999);
-  navigator.clipboard.writeText(input.value).then(() => {
-    alert('订阅链接已复制 🎉');
-  });
-}
-</script>
+
+<a class="btn" href="/sub">
+原始订阅
+</a>
+
+<a class="btn" href="/clash">
+Clash 订阅
+</a>
+
+<a class="btn" href="/singbox">
+Sing-box 订阅
+</a>
+
+<a class="btn" href="/v2rayn">
+V2rayN 订阅
+</a>
+
+<div class="footer">
+Service Running
+</div>
+
+</div>
+
 </body>
 </html>
-`, {
-        headers: { "content-type": "text/html;charset=UTF-8" },
-      })
+`,
+{
+headers:{
+"content-type":"text/html;charset=UTF-8"
+}
+})
     }
 
-    // =========================
-    // 通用订阅
-    // =========================
+    // 原始订阅
     if (url.pathname === "/sub") {
       return await proxySub(SUB_URL)
     }
 
-    // =========================
     // Clash
-    // =========================
     if (url.pathname === "/clash") {
       return await convertSub(SUB_URL, "clash")
     }
 
-    // =========================
     // Sing-box
-    // =========================
     if (url.pathname === "/singbox") {
       return await convertSub(SUB_URL, "singbox")
     }
 
-    // =========================
     // V2rayN
-    // =========================
     if (url.pathname === "/v2rayn") {
       return await proxySub(SUB_URL)
     }
 
-    return new Response("404 Not Found", { status: 404 })
+    return new Response("404 Not Found", {
+      status: 404,
+    })
   },
 }
 
-// =========================
 // 原始订阅代理
-// =========================
 async function proxySub(subUrl) {
-  const response = await fetch(subUrl, {
-    headers: { "User-Agent": "Mozilla/5.0" },
-  })
+  const response = await fetch(subUrl)
+
   const text = await response.text()
-  return new Response(text, { headers: { "content-type": "text/plain;charset=utf-8" } })
+
+  return new Response(text, {
+    headers: {
+      "content-type": "text/plain;charset=utf-8",
+    },
+  })
 }
 
-// =========================
-// 订阅转换（subconverter）
-// =========================
+// 订阅转换
 async function convertSub(subUrl, target) {
-  const converter = "https://sub.xeton.dev/sub"
-  const url = `${converter}?target=${target}&url=${encodeURIComponent(subUrl)}&insert=false&emoji=true&list=true`
-  const response = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } })
+
+  const converter =
+    "https://api.v1.mk/sub"
+
+  const url =
+    `${converter}?target=${target}&url=${encodeURIComponent(subUrl)}&insert=false&emoji=true&list=true`
+
+  const response = await fetch(url)
+
   const text = await response.text()
-  return new Response(text, { headers: { "content-type": "text/plain;charset=utf-8" } })
+
+  return new Response(text, {
+    headers: {
+      "content-type": "text/plain;charset=utf-8",
+    },
+  })
 }
