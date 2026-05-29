@@ -1,49 +1,32 @@
 export default {
-
   async fetch(request) {
 
-    const url =
-      new URL(request.url)
+    const url = new URL(request.url)
 
-    // 首页
     if (url.pathname === "/") {
-
-      return new Response(
-        html(),
-        {
-          headers:{
-            "content-type":
-            "text/html;charset=utf-8"
-          }
+      return new Response(html(), {
+        headers: {
+          "content-type": "text/html;charset=utf-8"
         }
-      )
-
+      })
     }
 
-    // 转换接口
     if (url.pathname === "/convert") {
 
       const sub =
         url.searchParams.get("url")
 
       const target =
-        url.searchParams.get("target")
-        || "clash"
+        url.searchParams.get("target") || "clash"
 
       if (!sub) {
-
         return new Response(
           "Missing url",
           { status:400 }
         )
-
       }
 
-      return await convert(
-        sub,
-        target
-      )
-
+      return await convert(sub,target)
     }
 
     return new Response(
@@ -52,7 +35,6 @@ export default {
     )
 
   }
-
 }
 
 // 主转换
@@ -66,23 +48,15 @@ async function convert(subUrl,target){
     let text =
       await res.text()
 
-    // base64 自动解码
-    if(
-      !text.includes("proxies:")
-      &&
-      !text.includes("outbounds")
-    ){
-
-      try{
-
+    // 自动 base64 解码
+    try{
+      if(
+        !text.includes("://")
+      ){
         text =
-          atob(
-            text.trim()
-          )
-
-      }catch{}
-
-    }
+          atob(text.trim())
+      }
+    }catch{}
 
     const lines =
       text
@@ -239,17 +213,13 @@ rules:
 
 }
 
-// 通用解析
+// 节点解析
 function parseNode(link){
 
   try{
 
     // vmess
-    if(
-      link.startsWith(
-        "vmess://"
-      )
-    ){
+    if(link.startsWith("vmess://")){
 
       const json =
         JSON.parse(
@@ -296,41 +266,24 @@ function parseNode(link){
           json.sni || "",
 
         fp:
-          json.fp || ""
+          json.fp || "chrome"
 
       }
 
     }
 
-    // 通用 URL 协议
+    // vless / trojan
     const protocols = [
-
       "vless://",
-      "trojan://",
-      "tuic://",
-      "hy2://",
-      "hysteria2://"
-
+      "trojan://"
     ]
 
     for(const p of protocols){
 
-      if(
-        link.startsWith(p)
-      ){
+      if(link.startsWith(p)){
 
         const u =
-          new URL(
-            link
-            .replace(
-              "hy2://",
-              "https://"
-            )
-            .replace(
-              "hysteria2://",
-              "https://"
-            )
-          )
+          new URL(link)
 
         const params = {}
 
@@ -338,9 +291,7 @@ function parseNode(link){
           const [k,v]
           of u.searchParams
         ){
-
           params[k] = v
-
         }
 
         return {
@@ -353,10 +304,7 @@ function parseNode(link){
 
           name:
             decodeURIComponent(
-              u.hash.replace(
-                "#",
-                ""
-              )
+              u.hash.replace("#","")
             ) || "node",
 
           server:
@@ -380,17 +328,10 @@ function parseNode(link){
     }
 
     // ss
-    if(
-      link.startsWith(
-        "ss://"
-      )
-    ){
+    if(link.startsWith("ss://")){
 
       const body =
-        link.replace(
-          "ss://",
-          ""
-        )
+        link.replace("ss://","")
 
       const tmp =
         body.split("#")
@@ -407,20 +348,6 @@ function parseNode(link){
       const hostPort =
         arr[1]
 
-      const method =
-        methodPass.split(":")[0]
-
-      const password =
-        methodPass.split(":")[1]
-
-      const host =
-        hostPort.split(":")[0]
-
-      const port =
-        Number(
-          hostPort.split(":")[1]
-        )
-
       return {
 
         type:"ss",
@@ -430,13 +357,19 @@ function parseNode(link){
             tmp[1] || "ss"
           ),
 
-        server:host,
+        server:
+          hostPort.split(":")[0],
 
-        port,
+        port:
+          Number(
+            hostPort.split(":")[1]
+          ),
 
-        cipher:method,
+        cipher:
+          methodPass.split(":")[0],
 
-        password
+        password:
+          methodPass.split(":")[1]
 
       }
 
@@ -448,7 +381,7 @@ function parseNode(link){
 
 }
 
-// Clash 输出
+// Clash
 function clashNode(node){
 
   // vmess
@@ -462,11 +395,11 @@ function clashNode(node){
     uuid: ${node.uuid}
     alterId: ${node.alterId}
     cipher: auto
-    network: ${node.network}
     tls: ${node.tls}
-    udp: true
+    network: ${node.network}
     servername: ${node.sni}
     client-fingerprint: ${node.fp}
+    udp: true
     ws-opts:
       path: "${node.path}"
       headers:
@@ -484,7 +417,6 @@ function clashNode(node){
     server: ${node.server}
     port: ${node.port}
     uuid: ${node.username}
-    udp: true
     tls: ${
       node.params.security === "tls"
     }
@@ -497,6 +429,7 @@ function clashNode(node){
     client-fingerprint: ${
       node.params.fp || "chrome"
     }
+    udp: true
     ws-opts:
       path: "${
         node.params.path || "/"
@@ -540,7 +473,7 @@ function clashNode(node){
 
 }
 
-// Sing-box 输出
+// Sing-box
 function singboxNode(node){
 
   // vmess
@@ -583,29 +516,19 @@ function singboxNode(node){
           === "tls",
 
         server_name:
-          node.params.sni || "",
-
-        utls:{
-          enabled:true,
-          fingerprint:
-            node.params.fp
-            || "chrome"
-        }
+          node.params.sni || ""
       },
 
       transport:{
         type:
-          node.params.type
-          || "tcp",
+          node.params.type || "tcp",
 
         path:
-          node.params.path
-          || "/",
+          node.params.path || "/",
 
         headers:{
           Host:
-            node.params.host
-            || ""
+            node.params.host || ""
         }
       }
 
@@ -657,7 +580,7 @@ function singboxNode(node){
 
 }
 
-// 页面
+// UI
 function html(){
 
 return `
@@ -675,6 +598,10 @@ content="width=device-width,initial-scale=1.0">
 
 <title>PSUB</title>
 
+<link
+href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+rel="stylesheet">
+
 <style>
 
 *{
@@ -684,102 +611,217 @@ box-sizing:border-box
 }
 
 body{
-background:#0f172a;
-height:100vh;
+
+background:
+linear-gradient(
+135deg,
+#0f172a,
+#111827,
+#020617
+);
+
+font-family:
+"Inter",
+sans-serif;
+
+min-height:100vh;
+
 display:flex;
+
 justify-content:center;
+
 align-items:center;
-font-family:sans-serif;
+
 padding:20px;
+
 color:white
+
 }
 
 .card{
+
 width:100%;
-max-width:520px;
-background:#111827;
-padding:35px;
-border-radius:24px;
-box-shadow:0 0 40px rgba(0,0,0,.45)
+
+max-width:560px;
+
+background:
+rgba(17,24,39,.82);
+
+backdrop-filter:
+blur(18px);
+
+border:
+1px solid rgba(255,255,255,.06);
+
+padding:36px;
+
+border-radius:28px;
+
+box-shadow:
+0 10px 40px rgba(0,0,0,.45)
+
 }
 
 .logo{
-font-size:44px;
-font-weight:bold;
+
+font-size:52px;
+
+font-weight:700;
+
 text-align:center;
-margin-bottom:12px;
-background:linear-gradient(
+
+background:
+linear-gradient(
 90deg,
 #60a5fa,
-#818cf8
+#818cf8,
+#c084fc
 );
+
 -webkit-background-clip:text;
--webkit-text-fill-color:transparent
+
+-webkit-text-fill-color:transparent;
+
+margin-bottom:10px
+
 }
 
 .desc{
+
 text-align:center;
+
 color:#94a3b8;
-margin-bottom:25px
+
+margin-bottom:28px;
+
+font-size:15px
+
 }
 
-.input{
-width:100%;
-padding:15px;
-border:none;
-border-radius:12px;
-background:#1e293b;
-color:white;
-font-size:15px;
-margin-bottom:18px
-}
-
+.input,
 .select{
+
 width:100%;
-padding:15px;
+
+padding:16px;
+
 border:none;
-border-radius:12px;
+
+outline:none;
+
+border-radius:16px;
+
 background:#1e293b;
+
 color:white;
+
 font-size:15px;
+
 margin-bottom:18px
+
+}
+
+.input::placeholder{
+color:#64748b
 }
 
 .btn{
+
 width:100%;
-padding:15px;
+
+padding:16px;
+
 border:none;
-border-radius:12px;
-background:#2563eb;
+
+border-radius:16px;
+
+background:
+linear-gradient(
+90deg,
+#2563eb,
+#7c3aed
+);
+
 color:white;
+
 font-size:16px;
-font-weight:bold;
-cursor:pointer
+
+font-weight:700;
+
+cursor:pointer;
+
+transition:.25s
+
+}
+
+.btn:hover{
+
+transform:
+translateY(-2px)
+
 }
 
 .result{
-margin-top:20px;
-background:#1e293b;
-padding:15px;
-border-radius:12px;
+
+margin-top:22px;
+
+background:#0f172a;
+
+padding:18px;
+
+border-radius:18px;
+
 word-break:break-all;
+
 white-space:pre-wrap;
+
 font-size:13px;
-max-height:240px;
+
+max-height:260px;
+
 overflow:auto;
-color:#93c5fd
+
+line-height:1.6;
+
+color:#93c5fd;
+
+border:
+1px solid rgba(255,255,255,.04)
+
 }
 
 .copy{
-margin-top:14px;
+
+margin-top:16px;
+
 width:100%;
-padding:13px;
+
+padding:15px;
+
 border:none;
-border-radius:12px;
+
+border-radius:16px;
+
 background:#0ea5e9;
+
 color:white;
-font-weight:bold;
+
+font-weight:700;
+
 cursor:pointer
+
+}
+
+.footer{
+
+margin-top:20px;
+
+text-align:center;
+
+font-size:12px;
+
+color:#64748b
+
 }
 
 </style>
@@ -795,7 +837,7 @@ PSUB
 </div>
 
 <div class="desc">
-Cloudflare Subscription Convert
+Secure Cloudflare Subscription Converter
 </div>
 
 <input
@@ -808,7 +850,7 @@ id="target"
 class="select">
 
 <option value="clash">
-Clash
+Clash Meta
 </option>
 
 <option value="singbox">
@@ -844,6 +886,10 @@ onclick="copyResult()">
 复制结果
 
 </button>
+
+<div class="footer">
+Powered by Cloudflare Workers
+</div>
 
 </div>
 
