@@ -4,7 +4,7 @@ export default {
 
     const url = new URL(request.url)
 
-    // 管理页面
+    // 管理后台
     if (url.pathname === "/admin") {
 
       const current = await env.SUB_DB.get("sub")
@@ -12,33 +12,70 @@ export default {
       return new Response(`
 <!DOCTYPE html>
 <html>
+
 <head>
 <meta charset="utf-8">
-<title>订阅管理</title>
+<title>订阅管理面板</title>
+
+<style>
+
+body{
+  font-family:sans-serif;
+  padding:20px;
+}
+
+input{
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+}
+
+button{
+  padding:10px 20px;
+}
+
+pre{
+  background:#f3f3f3;
+  padding:10px;
+  overflow:auto;
+}
+
+</style>
+
 </head>
+
 <body>
 
 <h2>订阅管理面板</h2>
 
 <form method="POST" action="/save">
 
-  <input
-    type="text"
-    name="url"
-    value="${current || ""}"
-    placeholder="输入订阅地址"
-    style="width:90%"
-  />
+<input
+  type="text"
+  name="url"
+  value="${current || ""}"
+  placeholder="输入订阅地址"
+/>
 
-  <button type="submit">
-    保存
-  </button>
+<button type="submit">
+保存
+</button>
 
 </form>
 
-<p>订阅地址：</p>
+<hr>
 
-<pre>/sub</pre>
+<p>订阅获取地址：</p>
+
+<pre>
+/sub
+</pre>
+
+<p>完整订阅地址：</p>
+
+<pre>
+${url.origin}/sub
+</pre>
 
 </body>
 </html>
@@ -49,38 +86,20 @@ export default {
       })
     }
 
-    // 保存
+    // 保存订阅
     if (url.pathname === "/save") {
 
-      const form = await request.formData()
+      try {
 
-      const sub = form.get("url") || ""
+        const form = await request.formData()
 
-      await env.SUB_DB.put("sub", sub)
+        const sub = form.get("url") || ""
 
-      return new Response("保存成功")
-    }
+        await env.SUB_DB.put("sub", sub)
 
-    // 获取订阅
-    if (url.pathname === "/sub") {
+        return new Response(`
+保存成功
 
-      const sub = await env.SUB_DB.get("sub")
-
-      if (!sub) {
-        return new Response("未设置订阅")
-      }
-
-      const resp = await fetch(sub)
-
-      const text = await resp.text()
-
-      return new Response(text, {
-        headers: {
-          "content-type": "text/plain;charset=utf-8"
-        }
-      })
-    }
-
-    return new Response("404")
-  }
-}
+<a href="/admin">
+返回后台
+</a>
