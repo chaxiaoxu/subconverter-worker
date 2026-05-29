@@ -1,42 +1,78 @@
+let SUB_URL = ""
+
 export default {
+
   async fetch(request) {
 
     const url = new URL(request.url)
 
-    const target = url.searchParams.get("url")
+    // 管理页面
+    if (url.pathname === "/admin") {
 
-    if (!target) {
-      return new Response(
-        "Usage: ?url=订阅地址",
-        { status: 400 }
-      )
-    }
+      return new Response(`
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>订阅管理</title>
+</head>
+<body>
 
-    try {
+<h2>订阅管理面板</h2>
 
-      const response = await fetch(target, {
+<form method="POST" action="/save">
+  <input
+    type="text"
+    name="url"
+    placeholder="输入订阅地址"
+    style="width:90%"
+  />
+  <button type="submit">保存</button>
+</form>
+
+<p>
+订阅获取地址：
+</p>
+
+<pre>/sub</pre>
+
+</body>
+</html>
+      `, {
         headers: {
-          "User-Agent": "Mozilla/5.0"
+          "content-type": "text/html;charset=utf-8"
         }
       })
+    }
 
-      const data = await response.text()
+    // 保存订阅
+    if (url.pathname === "/save") {
 
-      return new Response(data, {
-        status: 200,
+      const form = await request.formData()
+
+      SUB_URL = form.get("url") || ""
+
+      return new Response("保存成功")
+    }
+
+    // 获取订阅
+    if (url.pathname === "/sub") {
+
+      if (!SUB_URL) {
+        return new Response("未设置订阅")
+      }
+
+      const resp = await fetch(SUB_URL)
+
+      const text = await resp.text()
+
+      return new Response(text, {
         headers: {
-          "content-type": "text/plain;charset=utf-8",
-          "Access-Control-Allow-Origin": "*"
+          "content-type": "text/plain;charset=utf-8"
         }
       })
-
-    } catch (e) {
-
-      return new Response(
-        "Fetch Error: " + e.toString(),
-        { status: 500 }
-      )
-
     }
+
+    return new Response("404")
   }
 }
